@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+import threading
 
 from SDCardMonitor import SDCardMonitor
 
@@ -56,12 +57,19 @@ def copy_content(source_path, destination_path):
                         counter += 1
             # Copy the file if it wasn't skipped
             shutil.copy2(source_file, target_file)
-            print(f"Copied: {source_file} -> {target_file}")
+            print(f"Copied: {source_file} -> {target_file}")    
+
+def copy_all():
+    global doing_copy
+
+    doing_copy = True
+
+    copy_content(os.path.join(mount_path, "DCIM/100MSDCF"), os.path.join(destination_path, "images"))
+    copy_content(os.path.join(mount_path, "PRIVATE/M4ROOT/CLIP"), os.path.join(destination_path, "videos"))
 
     doing_copy = False
 
-
-def message_cb(topic, payload):
+def message_cb(topic, payload):    
     print("New MQTT message received!")
     if topic == "homeassistant/sdcard/control/mount":
         if payload == '1' and sd_monitor.get_status() == "UNMOUNTED":
@@ -69,9 +77,9 @@ def message_cb(topic, payload):
         elif payload == '0' and sd_monitor.get_status() == "MOUNTED":
             sd_monitor.unmount()
     elif topic == "homeassistant/sdcard/control/copy":
-        if sd_monitor.get_status() == "MOUNTED":
-            doing_copy = True
-            copy_content(mount_path, destination_path)
+        if sd_monitor.get_status() == "MOUNTED":            
+            copy_thread = threading.Thread(target=copy_all)   
+            copy_thread.start()                     
 
 if __name__ == "__main__":
     # Create an instance of SDCardMonitor
@@ -90,6 +98,7 @@ if __name__ == "__main__":
     try:
         while not force_stop:
             if doing_copy:
+                print("SD card doing copy.")
                 mqtt_manager.publish_message("homeassistant/sdcard/status", payload="COPYING")
             elif sd_monitor.check_plug_status():
                 print("SD card is plugged in.")
@@ -105,7 +114,7 @@ if __name__ == "__main__":
                 unplugged = True
                 mqtt_manager.publish_message("homeassistant/sdcard/status", payload="UNPLUGGED")
 
-            time.sleep(1)
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("Monitoring stopped.")
         force_stop = True
