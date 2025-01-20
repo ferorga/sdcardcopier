@@ -1,0 +1,11 @@
+{
+    "client_id": "SDCard_Controller",
+    "mqtt_username": "mqtt-user",
+    "mqtt_password": "HAmqtt",
+    "mqtt_host": "192.168.20.100",
+    "mqtt_port": 1883,
+    "subscribed_topics": [
+        "homeassistant/sdcard/control/mount",
+        "homeassistant/sdcard/control/copy"
+    ]
+}

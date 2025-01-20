@@ -1,0 +1,14 @@
+[Unit]
+Description=MQTT Service for Python Script
+After=network.target
+
+[Service]
+User=pi5
+ExecStart=/home/pi5/sdcardcopier/run.sh
+WorkingDirectory=/home/pi5/sdcardcopier
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
